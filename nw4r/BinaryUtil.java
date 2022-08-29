@@ -12,9 +12,9 @@ import java.util.Arrays;
  * @version 1.0
  */
 public final class BinaryUtil {
-	
+
 	/**
-     * HEADER FLAG: Describes used endian (big endian).
+	 * HEADER FLAG: Describes used endian (big endian).
      */
     public static final short BIG_ENDIAN = (short) 0xFEFF;
 
@@ -33,7 +33,7 @@ public final class BinaryUtil {
      * VERSION FLAG: Represents the file format's version. In NSMBWii it (seems)
      * to be always {@code 0x0104}.
      */
-    public static final short NSMBWII_VERSION = 0x0104;
+    public static final short NSMBWII_VERSION = 0x0100;
     
 	//No object for you.
 	private BinaryUtil() {}
@@ -105,7 +105,7 @@ public final class BinaryUtil {
 	 * </ul>
 	 */
 	public static class Header {
-		public static final int SIZE = 64; //0x00 - 0x40
+		public static final int SIZE = 16; //0x00 - 0x20
 		private String name;
 		private short bom;
 		private short version;
@@ -124,13 +124,10 @@ public final class BinaryUtil {
 	 * </ul>
 	 */
 	public static class SectionHeader {
-		public static final int SIZE = 32; //0x00 - 0x20
+		public static final int SIZE = 8; //0x00 - 0x08
+		public static final int SECTION_MASK = 0x0C;
 		private String name;
 		private int size;
-		
-		public int getSize() {
-		    return size;
-		}
 		
 		public void setSize(int i) {
 		    if (i >= 0) {
@@ -247,7 +244,7 @@ public final class BinaryUtil {
      * and returns it as short.
      */
     public static short toShort(byte[] data, int from, int to) {
-        return (short) (ByteBuffer.wrap(loadRegion(data, from, to)).getShort());
+        return ByteBuffer.wrap(loadRegion(data, from, to)).getShort();
     }
     
     /**
@@ -257,7 +254,7 @@ public final class BinaryUtil {
     public static int toInt(byte[] data, int from, int to) {
         return ByteBuffer.wrap(loadRegion(data, from, to)).getInt();
     }
-    
+
     /**
      * Takes a byte array and returns it string representation
      * with its numbers displayed in hex.
@@ -324,7 +321,30 @@ public final class BinaryUtil {
     public static Header loadHeader(byte[] data) {
         return loadHeader(data, NSMBWII_VERSION);
     }
-    
+
+	/**
+	 * Convert {@link Byte} array to its primitive counterpart.
+	 * @param a The array to convert.
+	 * @return  the converted array.
+	 */
+	public static byte[] toByte(Byte[] a) {
+		byte[] b = new byte[a.length];
+		for (int i = 0; i < b.length; i++) b[i] = a[i];
+		return b;
+	}
+
+	/**
+	 * Creates a padding fo the given size in bytes and returns it.
+	 *
+	 * @param size The size of the padding.
+	 * @return the padding.
+	 */
+	public static byte[] padding(int size) {
+		byte[] b = new byte[size];
+		for (int i = 0; i < size; i++) b[i] = 0;
+		return b;
+	}
+
     /**
      * Reads the binary data of a given file and returns the
      * data as byte array.
