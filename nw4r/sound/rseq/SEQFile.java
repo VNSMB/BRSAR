@@ -1,5 +1,7 @@
 package nw4r.sound.rseq;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -193,14 +195,14 @@ public class SEQFile {
         
         //We start at the first element inside the label offset table.
         //Every element is a 4 byte integer
-        int startOffset = this.labelBlockOffset + this.label.numberOfLables;
+        int startOffset = this.labelBlockOffset + SectionHeader.SECTION_MASK;
 
         for (int i = startOffset, j = 0; i < (startOffset + TABLE_SIZE) && j < TABLE_SIZE; i += INT, j++) {
             int labelOffset = BinaryUtil.toInt(data, i, i + INT);
             
             this.label.offsetToLabel[j] = labelOffset;
             int offToData = this.labelBlockOffset + 0x08 + labelOffset;
-            
+
             int labelInfoOffset = BinaryUtil.toInt(data, offToData, offToData + INT);
             int labelNameLength = BinaryUtil.toInt(data, offToData + INT, offToData + (INT * 2));
             
@@ -264,8 +266,24 @@ public class SEQFile {
         LABLInfo info = this.label.info.get(i);
 
         System.out.println("Name: " + info.name);
-        System.out.println("Data offset: " + Integer.toHexString(info.data));
-        System.out.println("DATA (in HEX): " + BinaryUtil.toString(this.data.dataBlocks.get(info.data)));
+        System.out.println("Data offset: " + Integer.toHexString(info.dataOffset));
+        System.out.println("DATA (in HEX): " + BinaryUtil.toString(this.data.dataBlocks.get(info.dataOffset)));
+    }
+
+    /**
+     * Saves the binary data of a label in a separate file.
+     * @param path The path to store the data.
+     * @param id   The id of the label to store.
+     */
+    public void saveLabelBin(String path, int id) {
+        LABLInfo info = this.label.info.get(id);
+        byte[] data = BinaryUtil.toByte(this.data.dataBlocks.get(info.dataOffset));
+
+        try (FileOutputStream fos = new FileOutputStream(path)) {
+            fos.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -316,19 +334,19 @@ public class SEQFile {
         int offset;
         int nameLength;
         String name;
-        int data;
+        int dataOffset;
         
         LABLInfo(int offset, String name) {
             this.offset = offset;
             this.nameLength = name.length();
             this.name = name;
-            this.data = dataBlockOffset + 0x0C + this.offset;
+            this.dataOffset = dataBlockOffset + 0x0C + this.offset;
         }
         
         @Override
         public String toString() {
             return "LABEL(" + Integer.toHexString(offset) + ", " + nameLength + ", " + name + ")"
-                   +" SEQ DATA at: " + Integer.toHexString(data);
+                   +" SEQ DATA at: " + Integer.toHexString(dataOffset);
         }
     }
 }
